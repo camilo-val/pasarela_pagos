@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: authorization-payment
+  data:
+    redis:
+      url: ${REDIS_URI}
+      repositories:
+        enabled: false
+server:
+  port: 8082
+
+webclient:
+    base-url:
+        payment-service: ${PAYMENT_SERVICE_URL}
