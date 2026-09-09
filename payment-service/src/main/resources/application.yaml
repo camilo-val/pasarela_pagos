@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: payment-service
+  mongodb:
+    uri: ${MONGO_URI}
+  data:
+    redis:
+      url: ${REDIS_URI}
+      repositories:
+        enabled: false
+server:
+  port: 8081
