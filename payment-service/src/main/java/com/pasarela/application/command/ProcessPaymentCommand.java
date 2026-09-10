@@ -10,7 +10,7 @@ import java.util.UUID;
 @Builder
 public record ProcessPaymentCommand (
         String id,
-        UUID transactionId,
+        UUID userId,
         BigDecimal amount,
         String currency,
         PaymentStatus status,

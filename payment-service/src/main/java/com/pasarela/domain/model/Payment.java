@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public class Payment {
     private final String id;
-    private final UUID transactionId;
+    private final UUID userId;
     private final BigDecimal amount;
     private final String currency;
     private final PaymentStatus status;
@@ -19,10 +19,10 @@ public class Payment {
     private final Instant createdAt;
     private final Instant updatedAt;
 
-    private Payment(String id, UUID transactionId, BigDecimal amount, String currency, PaymentStatus status,
-                   String description, UUID orderId, Instant createdAt, Instant updatedAt) {
+    private Payment(String id, UUID userId, BigDecimal amount, String currency, PaymentStatus status,
+                    String description, UUID orderId, Instant createdAt, Instant updatedAt) {
         this.id = id;
-        this.transactionId = transactionId;
+        this.userId = userId;
         this.amount = amount;
         this.currency = currency;
         this.status = status;
@@ -32,29 +32,29 @@ public class Payment {
         this.updatedAt = updatedAt;
     }
 
-    public static Payment create(UUID transactionId, BigDecimal amount, String currency,
+    public static Payment create(UUID userId, BigDecimal amount, String currency,
                                  String description, UUID orderId) {
-        if (transactionId == null || amount == null || orderId == null ) {
+        if (userId == null || amount == null || orderId == null ) {
             throw new BusinessExceptions(BusinessTransactionalExceptions.INVALID_DATA_FOR_TRANSACTION);
         }
         validateAttribute(currency,description);
-        return new Payment(null,transactionId,amount,currency,PaymentStatus.PENDING,description,orderId,Instant.now(),null);
+        return new Payment(null,userId,amount,currency,PaymentStatus.PENDING,description,orderId,Instant.now(),null);
     }
 
     public Payment updateStatus(PaymentStatus status, String description){
         if (status == PaymentStatus.PENDING ) {
             throw new BusinessExceptions(BusinessTransactionalExceptions.INVALID_STATUS);
         }
-        return new Payment(this.id,this.transactionId,this.amount,this.currency,status, description,this.orderId,this.createdAt,Instant.now());
+        return new Payment(this.id,this.userId,this.amount,this.currency,status, description,this.orderId,this.createdAt,Instant.now());
     }
 
-    public static Payment rebuild(String id, UUID transactionId, BigDecimal amount, String currency, PaymentStatus status,
+    public static Payment rebuild(String id, UUID userId, BigDecimal amount, String currency, PaymentStatus status,
                                  String description, UUID orderId, Instant createdAt, Instant updatedAt) {
-        if (id == null || transactionId == null || amount == null || status == null || orderId == null || createdAt == null) {
+        if (id == null || userId == null || amount == null || status == null || orderId == null || createdAt == null) {
             throw new BusinessExceptions(BusinessTransactionalExceptions.INVALID_DATA_FOR_TRANSACTION);
         }
         validateAttribute(currency,description);
-        return new Payment(id,transactionId,amount,currency,status,description,orderId,createdAt,updatedAt);
+        return new Payment(id,userId,amount,currency,status,description,orderId,createdAt,updatedAt);
     }
 
     private static void validateAttribute(String currency,
@@ -75,8 +75,8 @@ public class Payment {
         return id;
     }
 
-    public UUID getTransactionId() {
-        return transactionId;
+    public UUID getUserId() {
+        return userId;
     }
 
     public BigDecimal getAmount() {
@@ -111,7 +111,7 @@ public class Payment {
     public String toString() {
         return "Payment{" +
                 "id=" + id +
-                ", transactionId=" + transactionId +
+                ", userId=" + userId +
                 ", amount=" + amount +
                 ", currency='" + currency + '\'' +
                 ", status=" + status +

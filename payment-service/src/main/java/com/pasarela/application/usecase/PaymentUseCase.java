@@ -21,16 +21,18 @@ public class PaymentUseCase {
     private final PaymentMapper mapper;
 
     public Mono<Payment> processPayment(ProcessPaymentCommand payment) {
-        System.out.println("processPayment: " + payment);
+
         return paymentPort.existsByOrderId(payment.orderId())
                 .flatMap(exist -> {
-                    System.out.println("exist: " + exist);
                     if (exist) {
                         return Mono.error(new BusinessExceptions(BusinessTransactionalExceptions.TRANSACTION_ALREADY_EXISTS));
                     }
-                    return paymentPort.processPayment(Payment.create(UUID.randomUUID(),payment.amount(),
-                            payment.currency(), payment.description(),payment.orderId()))
 
+                    Payment payment1 = Payment.create(payment.userId(),payment.amount(),
+                            payment.currency(), payment.description(),payment.orderId());
+                    System.out.println("PaymentUseCase.processPayment: " + payment1);
+
+                    return paymentPort.processPayment(payment1)
                             .flatMap(savedPayment -> {
                                 ProcessPaymentCommand event = mapper.toCommand(savedPayment);
                                 return eventPublisher.publish(event).thenReturn(savedPayment);

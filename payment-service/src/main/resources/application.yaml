@@ -3,6 +3,8 @@ spring:
     name: payment-service
   mongodb:
     uri: ${MONGO_URI}
+    representation:
+      uuid: STANDARD
   data:
     redis:
       url: ${REDIS_URI}

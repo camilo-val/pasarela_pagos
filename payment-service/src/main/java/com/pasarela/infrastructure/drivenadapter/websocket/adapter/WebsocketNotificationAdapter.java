@@ -18,19 +18,25 @@ public class WebsocketNotificationAdapter implements PaymentNotificationWsPort {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Mono<Void> notify(UUID orderId, ProcessPaymentCommand event) {
+    public Mono<Void> notify(UUID userId, ProcessPaymentCommand event) {
         try {
 
             String message =
                     objectMapper.writeValueAsString(event);
 
             return connectionManager.send(
-                    orderId,
+                    userId,
                     message
             );
 
         } catch (Exception e) {
             return Mono.error(e);
         }
+
+    }
+
+    @Override
+    public Mono<Void> close(UUID orderId) {
+        return null;
     }
 }

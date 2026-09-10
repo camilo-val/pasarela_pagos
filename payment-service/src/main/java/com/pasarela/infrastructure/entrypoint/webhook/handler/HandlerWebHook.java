@@ -19,7 +19,7 @@ public class HandlerWebHook {
         return request.bodyToMono(UpdatePaymentRqDto.class)
                 .flatMap(requestDto ->{
 
-                            System.out.printf("123123");
+                            System.out.println("request -> " + requestDto);
                             return updatePaymentUC.updatePayment(request.pathVariable("orderId"),
                                     requestDto.status(),
                                     requestDto.description());

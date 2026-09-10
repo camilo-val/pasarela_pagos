@@ -6,5 +6,6 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 public interface PaymentNotificationWsPort {
-    Mono<Void> notify(UUID orderId, ProcessPaymentCommand event);
+    Mono<Void> notify(UUID userId, ProcessPaymentCommand event);
+    Mono<Void> close(UUID userId);
 }

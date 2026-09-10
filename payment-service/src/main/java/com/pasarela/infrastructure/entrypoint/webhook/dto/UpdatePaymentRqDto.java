@@ -7,7 +7,6 @@ import java.util.UUID;
 
 @Builder
 public record UpdatePaymentRqDto (
-        UUID transactionId,
         PaymentStatus status,
         String description
 ){
