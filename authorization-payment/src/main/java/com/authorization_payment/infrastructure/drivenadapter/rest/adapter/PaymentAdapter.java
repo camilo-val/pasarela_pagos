@@ -19,7 +19,7 @@ public class PaymentAdapter implements PublishTransactionPort {
     public Mono<PaymentAuthorization> UpdateStatusTransaction(ProcessPaymentCommand command) {
         return builder.build()
                 .put()
-                .uri("/webhook/{orderId}")
+                .uri("/webhook/{orderId}", command.orderId())
                 .bodyValue(command)
                 .retrieve()
                 .bodyToMono(PaymentModel.class)

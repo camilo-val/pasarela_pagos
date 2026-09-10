@@ -28,6 +28,7 @@ public class PaymentAuthorization {
         if (parameterIsInvalid || amount == null || orderId == null || status == null ) {
             throw new PaymentExceptions(PaymentMessageExceptions.INVALID_TRANSACTION);
         }
+        status = status.equals(PaymentStatus.PENDING)? PaymentStatus.APPROVED : status;
         return new PaymentAuthorization(amount, currency, description, orderId, status);
     }
     private static Boolean isNullOrBlank(String validator){

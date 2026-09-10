@@ -18,7 +18,6 @@ public class PaymentProcessUC {
     public Mono<PaymentAuthorization> updatePaymentStatus(ProcessPaymentCommand command){
         PaymentAuthorization paymentAuthorization = PaymentAuthorization.authorization(command.amount(),command.currency(),command.description(),
                 command.orderId(), PaymentStatus.random());
-
         return port.UpdateStatusTransaction(mapper.toCommand(paymentAuthorization));
     }
 }

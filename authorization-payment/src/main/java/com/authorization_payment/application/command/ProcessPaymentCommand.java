@@ -11,6 +11,7 @@ public record ProcessPaymentCommand (
         BigDecimal amount,
         String currency,
         String description,
+        PaymentStatus status,
         UUID orderId
 ){
 }
