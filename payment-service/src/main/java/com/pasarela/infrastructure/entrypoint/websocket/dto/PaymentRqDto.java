@@ -7,7 +7,6 @@ import java.util.UUID;
 
 @Builder
 public record PaymentRqDto(
-        UUID userId,
         BigDecimal amount,
         String currency,
         String description,

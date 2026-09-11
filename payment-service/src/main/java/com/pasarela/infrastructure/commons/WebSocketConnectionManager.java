@@ -13,19 +13,19 @@ public class WebSocketConnectionManager {
 
     private final Map<UUID, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
-    public void register(UUID userId, WebSocketSession session) {
-        sessions.put(userId, session);
+    public void register(UUID sessionId, WebSocketSession session) {
+        sessions.put(sessionId, session);
     }
 
-    public void remove(UUID userId) {
-        sessions.remove(userId);
+    public void remove(UUID sessionId) {
+        sessions.remove(sessionId);
     }
 
     public Mono<Void> send(
-            UUID userId,
+            UUID sessionId,
             String message
     ) {
-        WebSocketSession session = sessions.get(userId);
+        WebSocketSession session = sessions.get(sessionId);
 
         if (session == null || !session.isOpen()) {
             return Mono.empty();

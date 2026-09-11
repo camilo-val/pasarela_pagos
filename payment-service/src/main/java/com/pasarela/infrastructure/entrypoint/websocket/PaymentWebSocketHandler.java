@@ -11,10 +11,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -32,17 +34,23 @@ public class PaymentWebSocketHandler implements WebSocketHandler {
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
+        UUID userId = extractUserId(session);
+        connectionManager.register(userId, session);
+
         return session
                 .receive()
                 .map(WebSocketMessage::getPayloadAsText)
-                .flatMap(body -> {
-                    return this.deserialize(body).map(paymentRqDto -> {
-                        connectionManager.register(paymentRqDto.userId(),session);
-                        return mapper.toCommand(paymentRqDto);
-                    });
+                .flatMap(body -> this.deserialize(body).map(mapper::toCommand))
+                .flatMap(command -> {
+                    System.out.println("PaymentWebSocketHandler.handle: " + command);
+                    return paymentUseCase.processPayment(userId,command)
+                            .onErrorResume(e -> {
+                                log.error("Error processing payment: {}", e.getMessage(), e);
+                                return Mono.empty();
+                            });
                 })
-                .flatMap(paymentUseCase::processPayment)
                 .doOnNext(message -> log.info("message: {}", message))
+                .doFinally(signalType -> connectionManager.remove(userId))
                 .then();
     }
 
@@ -53,5 +61,14 @@ public class PaymentWebSocketHandler implements WebSocketHandler {
            e.printStackTrace();
             return Mono.error(e);
         }
+    }
+
+    private UUID extractUserId(WebSocketSession session) {
+        String userId = UriComponentsBuilder
+                .fromUri(session.getHandshakeInfo().getUri())
+                .build()
+                .getQueryParams()
+                .getFirst("userId");
+        return UUID.fromString(userId);
     }
 }

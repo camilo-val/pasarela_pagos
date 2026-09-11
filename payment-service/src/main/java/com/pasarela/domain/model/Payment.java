@@ -34,6 +34,7 @@ public class Payment {
 
     public static Payment create(UUID userId, BigDecimal amount, String currency,
                                  String description, UUID orderId) {
+        System.out.println("userId {} -> " + userId);
         if (userId == null || amount == null || orderId == null ) {
             throw new BusinessExceptions(BusinessTransactionalExceptions.INVALID_DATA_FOR_TRANSACTION);
         }

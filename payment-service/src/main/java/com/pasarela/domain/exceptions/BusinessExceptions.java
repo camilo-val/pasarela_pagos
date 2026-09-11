@@ -7,4 +7,8 @@ public class BusinessExceptions extends RuntimeException{
         super(businessTransactionalExceptions.getMessage());
         this.businessTransactionalExceptions = businessTransactionalExceptions;
     }
+
+    public BusinessTransactionalExceptions getBusinessTransactionalExceptions() {
+        return businessTransactionalExceptions;
+    }
 }
