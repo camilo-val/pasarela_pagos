@@ -42,6 +42,7 @@ public class PaymentWebSocketHandler implements WebSocketHandler {
                 .map(WebSocketMessage::getPayloadAsText)
                 .flatMap(body -> this.deserialize(body).map(mapper::toCommand))
                 .flatMap(command -> {
+
                     System.out.println("PaymentWebSocketHandler.handle: " + command);
                     return paymentUseCase.processPayment(userId,command)
                             .onErrorResume(e -> {
