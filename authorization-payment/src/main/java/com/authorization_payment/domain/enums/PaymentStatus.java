@@ -5,7 +5,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public enum PaymentStatus {
     APPROVED,
     PENDING,
-    DECLINED;
+    REJECTED;
 
     private static final PaymentStatus[] VALUES = values();
     public static PaymentStatus random() {
