@@ -6,6 +6,7 @@ import com.pasarela.domain.exceptions.BusinessTransactionalExceptions;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Random;
 import java.util.UUID;
 
 public class Payment {
@@ -35,7 +36,7 @@ public class Payment {
     public static Payment create(UUID userId, BigDecimal amount, String currency,
                                  String description, UUID orderId) {
         try {
-            Thread.sleep(15000L);
+            Thread.sleep(new Random().nextInt(1000)); // Simulate processing time
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
