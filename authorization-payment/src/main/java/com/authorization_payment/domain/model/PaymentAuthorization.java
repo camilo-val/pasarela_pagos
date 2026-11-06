@@ -54,4 +54,15 @@ public class PaymentAuthorization {
     public PaymentStatus getStatus() {
         return status;
     }
+
+    @Override
+    public String toString() {
+        return "PaymentAuthorization{" +
+                "amount=" + amount +
+                ", currency='" + currency + '\'' +
+                ", description='" + description + '\'' +
+                ", orderId=" + orderId +
+                ", status=" + status +
+                '}';
+    }
 }

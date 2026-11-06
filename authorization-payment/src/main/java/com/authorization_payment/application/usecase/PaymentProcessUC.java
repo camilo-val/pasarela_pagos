@@ -6,11 +6,13 @@ import com.authorization_payment.application.port.PublishTransactionPort;
 import com.authorization_payment.domain.enums.PaymentStatus;
 import com.authorization_payment.domain.model.PaymentAuthorization;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
 @AllArgsConstructor
+@Slf4j
 public class PaymentProcessUC {
     private final PublishTransactionPort port;
     private final PaymentCommandMapper mapper;
@@ -18,6 +20,6 @@ public class PaymentProcessUC {
     public Mono<PaymentAuthorization> updatePaymentStatus(ProcessPaymentCommand command){
         PaymentAuthorization paymentAuthorization = PaymentAuthorization.authorization(command.amount(),command.currency(),command.description(),
                 command.orderId(), PaymentStatus.random());
-        return port.UpdateStatusTransaction(mapper.toCommand(paymentAuthorization));
+        return port.UpdateStatusTransaction(mapper.toCommand(paymentAuthorization)).doOnNext(updatedPayment -> log.info("Updated payment status: {}", updatedPayment));
     }
 }
