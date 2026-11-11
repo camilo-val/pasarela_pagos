@@ -4,12 +4,13 @@ import com.authorization_payment.application.command.ProcessPaymentCommand;
 import com.authorization_payment.application.usecase.PaymentProcessUC;
 import com.authorization_payment.infrastructure.utils.Constants;
 import jakarta.annotation.PostConstruct;
-import lombok.AllArgsConstructor;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
@@ -27,28 +28,45 @@ public class RedisHandler {
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
     private final PaymentProcessUC useCase;
+
     @Value("${sleep.start}")
     private int sleepStart;
+
     @Value("${sleep.end}")
     private int sleepEnd;
+
+    private Disposable consumerSubscription;
 
     @PostConstruct
     public void start() {
 
         log.info("Starting Redis consumer for queue {}", Constants.QUEUE);
 
-        Flux.interval(Duration.ofMillis(500))
+        consumerSubscription = Flux.interval(Duration.ofMillis(500))
 
                 .flatMap(tick ->
                         redisTemplate.opsForList()
                                 .leftPop(Constants.QUEUE)
+                                .onErrorResume(error -> {
+                                    log.error("Error reading Redis queue", error);
+                                    return Mono.empty();
+                                })
                 )
 
                 .filter(Objects::nonNull)
 
                 .flatMap(message ->
-                        Mono.delay(Duration.ofMillis(ThreadLocalRandom.current().nextInt(sleepStart, sleepEnd))).then(
-                        Mono.fromCallable(() -> toCommand(message))
+
+                        Mono.delay(
+                                        Duration.ofMillis(
+                                                ThreadLocalRandom.current()
+                                                        .nextInt(sleepStart, sleepEnd)
+                                        )
+                                )
+
+                                .then(
+                                        Mono.fromCallable(() -> toCommand(message))
+                                )
 
                                 .flatMap(useCase::updatePaymentStatus)
 
@@ -70,20 +88,30 @@ public class RedisHandler {
 
                                     return Mono.empty();
                                 })
-                ))
+                )
 
                 .doOnSubscribe(subscription ->
                         log.info("Redis consumer subscribed")
                 )
 
+                .doOnCancel(() ->
+                        log.warn("Redis consumer cancelled")
+                )
+
                 .doOnError(error ->
-                        log.error("Redis consumer stopped unexpectedly", error)
+                        log.error(
+                                "Redis consumer stopped unexpectedly",
+                                error
+                        )
                 )
 
                 .retryWhen(
                         Retry.fixedDelay(
                                         Long.MAX_VALUE,
                                         Duration.ofSeconds(5)
+                                )
+                                .filter(error ->
+                                        !(error instanceof IllegalStateException)
                                 )
                                 .doBeforeRetry(retry ->
                                         log.warn(
@@ -101,6 +129,20 @@ public class RedisHandler {
                                 error
                         )
                 );
+    }
+
+    @PreDestroy
+    public void stop() {
+
+        log.info("Stopping Redis consumer");
+
+        if (consumerSubscription != null
+                && !consumerSubscription.isDisposed()) {
+
+            consumerSubscription.dispose();
+
+            log.info("Redis consumer stopped");
+        }
     }
 
     private ProcessPaymentCommand toCommand(String json) {
