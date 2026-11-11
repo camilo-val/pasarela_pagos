@@ -9,6 +9,7 @@ import com.pasarela.domain.exceptions.BusinessExceptions;
 import com.pasarela.domain.exceptions.BusinessTransactionalExceptions;
 import com.pasarela.domain.model.Payment;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 
 @Component
 @AllArgsConstructor
+@Slf4j
 public class UpdatePaymentUC {
     private final PaymentPort paymentPort;
     private final PaymentNotificationWsPort paymentNotificationWsPort;
@@ -25,11 +27,18 @@ public class UpdatePaymentUC {
         return paymentPort.getPaymentByOrderId(UUID.fromString(orderId))
                 .map(paymentBd -> paymentBd.updateStatus(status, description))
                 .map(e -> {
-                    System.out.println("OBJETO UPDATE: " + e);
+                    log.info("OBJETO UPDATE: {}", e);
                     return e;
                 })
                 .flatMap(paymentPort::updatePayment)
                 .flatMap(event ->  paymentNotificationWsPort.notify(event.getUserId(),mapper.toCommand(event)).thenReturn(event))
+                .doOnSuccess(unused ->
+                        log.info(
+                                "WS RESPONSE SENT. orderId={} , object: {}",
+                                unused.getOrderId(),
+                                unused
+                        )
+                )
                 .switchIfEmpty(Mono.error(new BusinessExceptions(BusinessTransactionalExceptions.TRANSACTION_NOT_EXISTS)));
     }
 }
