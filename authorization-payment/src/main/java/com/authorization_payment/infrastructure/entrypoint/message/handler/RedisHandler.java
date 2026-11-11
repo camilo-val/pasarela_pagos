@@ -5,7 +5,9 @@ import com.authorization_payment.application.usecase.PaymentProcessUC;
 import com.authorization_payment.infrastructure.utils.Constants;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -15,15 +17,20 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class RedisHandler {
 
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
     private final PaymentProcessUC useCase;
+    @Value("${sleep.start}")
+    private int sleepStart;
+    @Value("${sleep.end}")
+    private int sleepEnd;
 
     @PostConstruct
     public void start() {
@@ -40,7 +47,7 @@ public class RedisHandler {
                 .filter(Objects::nonNull)
 
                 .flatMap(message ->
-
+                        Mono.delay(Duration.ofMillis(ThreadLocalRandom.current().nextInt(sleepStart, sleepEnd))).then(
                         Mono.fromCallable(() -> toCommand(message))
 
                                 .flatMap(useCase::updatePaymentStatus)
@@ -63,7 +70,7 @@ public class RedisHandler {
 
                                     return Mono.empty();
                                 })
-                )
+                ))
 
                 .doOnSubscribe(subscription ->
                         log.info("Redis consumer subscribed")

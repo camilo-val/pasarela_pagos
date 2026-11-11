@@ -9,6 +9,10 @@ spring:
 server:
   port: ${PORT:8082}
 
+sleep:
+  start: ${START_TIMEOUT:3000}
+  end: ${END_TIMEOUT:10000}
+
 webclient:
     base-url:
         payment-service: ${PAYMENT_SERVICE_URL}

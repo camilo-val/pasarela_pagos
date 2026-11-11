@@ -35,11 +35,7 @@ public class Payment {
 
     public static Payment create(UUID userId, BigDecimal amount, String currency,
                                  String description, UUID orderId) {
-        try {
-            Thread.sleep(new Random().nextInt(1000)); // Simulate processing time
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+
         System.out.println("userId {} -> " + userId);
         if (userId == null || amount == null || orderId == null ) {
             throw new BusinessExceptions(BusinessTransactionalExceptions.INVALID_DATA_FOR_TRANSACTION);
