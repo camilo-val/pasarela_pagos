@@ -71,7 +71,9 @@ public class RedisHandler {
 
     private Flux<Void> createConsumer() {
 
-        return Flux.interval(Duration.ofMillis(500))
+        return
+
+                Flux.interval(Duration.ofMillis(500))
 
                 .takeWhile(tick -> !shuttingDown)
 
