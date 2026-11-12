@@ -6,6 +6,7 @@ import com.authorization_payment.application.port.PublishTransactionPort;
 import com.authorization_payment.domain.enums.PaymentStatus;
 import com.authorization_payment.domain.model.PaymentAuthorization;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,7 @@ import java.time.OffsetDateTime;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class PaymentProcessUC {
     private final PublishTransactionPort port;
