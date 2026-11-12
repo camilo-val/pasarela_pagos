@@ -37,20 +37,47 @@ public class RedisHandler {
 
     private Disposable consumerSubscription;
 
+    private volatile boolean shuttingDown = false;
+
     @PostConstruct
     public void start() {
 
         log.info("Starting Redis consumer for queue {}", Constants.QUEUE);
 
-        consumerSubscription = Flux.interval(Duration.ofMillis(500))
+        consumerSubscription = createConsumer()
+                .retryWhen(
+                        Retry.backoff(
+                                        Long.MAX_VALUE,
+                                        Duration.ofSeconds(5)
+                                )
+                                .maxBackoff(Duration.ofMinutes(1))
+                                .doBeforeRetry(signal ->
+                                        log.warn(
+                                                "Redis consumer restarting. Retry: {}",
+                                                signal.totalRetries() + 1,
+                                                signal.failure()
+                                        )
+                                )
+                )
+                .subscribe(
+                        result -> {
+                        },
+                        error -> log.error(
+                                "Fatal Redis consumer error",
+                                error
+                        )
+                );
+    }
+
+    private Flux<Void> createConsumer() {
+
+        return Flux.interval(Duration.ofMillis(500))
+
+                .takeWhile(tick -> !shuttingDown)
 
                 .flatMap(tick ->
                         redisTemplate.opsForList()
                                 .leftPop(Constants.QUEUE)
-                                .onErrorResume(error -> {
-                                    log.error("Error reading Redis queue", error);
-                                    return Mono.empty();
-                                })
                 )
 
                 .filter(Objects::nonNull)
@@ -60,12 +87,17 @@ public class RedisHandler {
                         Mono.delay(
                                         Duration.ofMillis(
                                                 ThreadLocalRandom.current()
-                                                        .nextInt(sleepStart, sleepEnd)
+                                                        .nextInt(
+                                                                sleepStart,
+                                                                sleepEnd
+                                                        )
                                         )
                                 )
 
                                 .then(
-                                        Mono.fromCallable(() -> toCommand(message))
+                                        Mono.fromCallable(
+                                                () -> toCommand(message)
+                                        )
                                 )
 
                                 .flatMap(useCase::updatePaymentStatus)
@@ -77,6 +109,8 @@ public class RedisHandler {
                                                 result.getStatus()
                                         )
                                 )
+
+                                .then()
 
                                 .onErrorResume(error -> {
 
@@ -98,34 +132,13 @@ public class RedisHandler {
                         log.warn("Redis consumer cancelled")
                 )
 
+                .doOnComplete(() ->
+                        log.warn("Redis consumer completed")
+                )
+
                 .doOnError(error ->
                         log.error(
-                                "Redis consumer stopped unexpectedly",
-                                error
-                        )
-                )
-
-                .retryWhen(
-                        Retry.fixedDelay(
-                                        Long.MAX_VALUE,
-                                        Duration.ofSeconds(5)
-                                )
-                                .filter(error ->
-                                        !(error instanceof IllegalStateException)
-                                )
-                                .doBeforeRetry(retry ->
-                                        log.warn(
-                                                "Retrying Redis consumer. Attempt: {}",
-                                                retry.totalRetries() + 1
-                                        )
-                                )
-                )
-
-                .subscribe(
-                        result -> {
-                        },
-                        error -> log.error(
-                                "Fatal Redis consumer error",
+                                "Redis consumer infrastructure error",
                                 error
                         )
                 );
@@ -135,6 +148,8 @@ public class RedisHandler {
     public void stop() {
 
         log.info("Stopping Redis consumer");
+
+        shuttingDown = true;
 
         if (consumerSubscription != null
                 && !consumerSubscription.isDisposed()) {
