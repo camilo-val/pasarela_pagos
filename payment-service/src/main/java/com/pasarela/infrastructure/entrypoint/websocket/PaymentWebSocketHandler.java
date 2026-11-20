@@ -39,8 +39,14 @@ public class PaymentWebSocketHandler implements WebSocketHandler {
 
         return session
                 .receive()
+                .filter(message -> message.getType() == WebSocketMessage.Type.TEXT)
                 .map(WebSocketMessage::getPayloadAsText)
-                .flatMap(body -> this.deserialize(body).map(mapper::toCommand))
+                // A malformed frame must not close the connection shared by every payment.
+                .flatMap(body -> this.deserialize(body).map(mapper::toCommand)
+                        .onErrorResume(e -> {
+                            log.error("Discarding invalid payment frame: {}", body, e);
+                            return Mono.empty();
+                        }))
                 .flatMap(command -> {
 
                     System.out.println("PaymentWebSocketHandler.handle: " + command);
@@ -51,7 +57,7 @@ public class PaymentWebSocketHandler implements WebSocketHandler {
                             });
                 })
                 .doOnNext(message -> log.info("message: {}", message))
-                .doFinally(signalType -> connectionManager.remove(userId))
+                .doFinally(signalType -> connectionManager.remove(userId, session))
                 .then();
     }
 
@@ -59,7 +65,6 @@ public class PaymentWebSocketHandler implements WebSocketHandler {
         try{
             return Mono.just(objectMapper.readValue(message, PaymentRqDto.class));
         }catch (Exception e){
-           e.printStackTrace();
             return Mono.error(e);
         }
     }
